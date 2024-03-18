@@ -9,6 +9,9 @@ install.packages("ggplot2")
 install.packages("remotes")
 install.packages("caTools")
 install.packages("class")
+install.packages("tidyverse")
+install.packages("cluster")
+install.packages("factoextra")
 library(readr)
 library(caret)
 library(rpart)
@@ -18,6 +21,9 @@ library(ggplot2)
 library(remotes)
 library(caTools)
 library(class)
+library(tidyverse)
+library(cluster)
+library(factoextra)
 
 remotes::install_github("cran/DMwR")
 library(DMwR)
@@ -68,3 +74,42 @@ str(datos)
 
 # Eliminamos la columna CustomerID
 datos_sin_id <- datos[, -which(names(datos) == "CustomerID")]
+
+# * Aplicamos el algoritmo de agrupamiento K-means
+
+set.seed(123)  # Para reproducibilidad
+kmeans_model <- kmeans(datos_sin_id[, c("Age", "Annual.Income", "Spending.Score")], centers = 5)
+
+# Visualizar los centros de los grupos
+kmeans_model$centers
+
+# Añadir el grupo asignado a cada cliente en los datos
+datos_sin_id$cluster <- as.factor(kmeans_model$cluster)
+
+# b) Construir dendrogramas jerárquicos
+# Método single
+dend_single <- hclust(dist(datos_sin_id[, c("Age", "Annual.Income", "Spending.Score")]), method = "single")
+# Método centroid
+dend_centroid <- hclust(dist(datos_sin_id[, c("Age", "Annual.Income", "Spending.Score")]), method = "centroid")
+# Método ward
+dend_ward <- hclust(dist(datos_sin_id[, c("Age", "Annual.Income", "Spending.Score")]), method = "ward.D2")
+
+# Comparar los dendrogramas
+fviz_dend(list("Single" = dend_single, "Centroid" = dend_centroid, "Ward" = dend_ward), k = 5)
+
+# c) Repetir las tareas por género
+# Separar datos por género
+male_customers <- datos_sin_id %>% filter(Gender == "Male")
+female_customers <- datos_sin_id %>% filter(Gender == "Female")
+
+# Aplicar k-means por género
+kmeans_male <- kmeans(male_customers[, c("Age", "Annual.Income", "Spending.Score")], centers = 5)
+kmeans_female <- kmeans(female_customers[, c("Age", "Annual.Income", "Spending.Score")], centers = 5)
+
+# Añadir el grupo asignado a cada cliente en los datos separados por género
+male_customers$cluster <- as.factor(kmeans_male$cluster)
+female_customers$cluster <- as.factor(kmeans_female$cluster)
+
+# Comparar los grupos encontrados por género
+summary(male_customers$cluster)
+summary(female_customers$cluster)
