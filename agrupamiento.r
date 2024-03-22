@@ -12,6 +12,7 @@ install.packages("class")
 install.packages("tidyverse")
 install.packages("cluster")
 install.packages("factoextra")
+install.packages("gridExtra")
 library(readr)
 library(caret)
 library(rpart)
@@ -24,6 +25,8 @@ library(class)
 library(tidyverse)
 library(cluster)
 library(factoextra)
+library(ggplot2)
+library(gridExtra)
 
 remotes::install_github("cran/DMwR")
 library(DMwR)
@@ -94,13 +97,18 @@ dend_centroid <- hclust(dist(datos_sin_id[, c("Age", "Annual.Income", "Spending.
 # Método ward
 dend_ward <- hclust(dist(datos_sin_id[, c("Age", "Annual.Income", "Spending.Score")]), method = "ward.D2")
 
-# Comparar los dendrogramas
-fviz_dend(list("Single" = dend_single, "Centroid" = dend_centroid, "Ward" = dend_ward), k = 5)
+# Crear los dendrogramas individualmente
+plot_single <- fviz_dend(dend_single, k = 5, main = "Single")
+plot_centroid <- fviz_dend(dend_centroid, k = 5, main = "Centroid")
+plot_ward <- fviz_dend(dend_ward, k = 5, main = "Ward")
 
+# Combinar los dendrogramas en una sola visualización
+combined_plots <- grid.arrange(plot_single, plot_centroid, plot_ward, ncol = 3)
+combined_plots
 # c) Repetir las tareas por género
 # Separar datos por género
-male_customers <- datos_sin_id %>% filter(Gender == "Male")
-female_customers <- datos_sin_id %>% filter(Gender == "Female")
+male_customers <- datos_sin_id %>% filter(Genre == "Male")
+female_customers <- datos_sin_id %>% filter(Genre == "Female")
 
 # Aplicar k-means por género
 kmeans_male <- kmeans(male_customers[, c("Age", "Annual.Income", "Spending.Score")], centers = 5)
